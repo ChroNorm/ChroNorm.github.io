@@ -16,6 +16,7 @@
 <body>
 
     <h1>Kintone Record Add Form</h1>
+    <h3>更新回数:3</h3>
     <form id="kintone-form">
         <div class="form-group">
             <label for="name">Name</label>
@@ -50,36 +51,19 @@
             const resultDiv = document.getElementById('result');
             resultDiv.textContent = 'Adding record...';
 
-            if (!kintoneInfo.token || !kintoneInfo.subdomain || !kintoneInfo.appId) {
-                resultDiv.textContent = 'Error: Kintone info not received.';
-                return;
-            }
-
             const name = document.getElementById('name').value;
             const subject = document.getElementById('subject').value;
 
-            const body = {
-                "app": kintoneInfo.appId,
-                "record": {
-                    "name": { "value": name },
-                    "subject": { "value": subject }
+            // 親ウィンドウにフォームデータを送信
+            window.parent.postMessage({
+                type: 'addKintoneRecord',
+                record: {
+                    name: { value: name },
+                    subject: { value: subject }
                 }
-            };
-
-            try {
-                const response = await fetch(`https://` + kintoneInfo.subdomain + `.cybozu.com/k/v1/record.json`, {
-                    method: 'POST',
-                    headers: {
-                        'X-Cybozu-API-Token': kintoneInfo.token,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(body)
-                });
-                const jsonResponse = await response.json();
-                resultDiv.textContent = 'Record added! Response: ' + JSON.stringify(jsonResponse);
-            } catch (error) {
-                resultDiv.textContent = 'Error: ' + error.message;
-            }
+            }, 'https://rpq33ai8jurt.cybozu.com');
+            
+            resultDiv.textContent = 'Record addition requested.';
         });
     </script>
 </body>
