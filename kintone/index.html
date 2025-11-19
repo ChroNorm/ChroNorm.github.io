@@ -118,21 +118,29 @@
 
         // kintoneからのデータを受け取る
         window.addEventListener('message', (event) => {
-            // 信頼できるオリジンからのメッセージか検証
-            // 最初にkintoneInfoを受け取るときは送信元が不明なので、event.data.originの存在で判断
-            if (kintoneOrigin && event.origin !== kintoneOrigin) {
-                if (!event.data || event.origin !== event.data.origin) return;
-            }
+            const eventData = event.data;
+            if (!eventData) return;
 
-            if (event.data && event.data.type === 'kintoneRecordAdded') {
-                // レコード追加結果の処理
+            // 最初にkintoneの情報を設定する
+            if (eventData.token && eventData.origin) {
+                kintoneInfo = eventData;
+                kintoneOrigin = event.origin;
                 return;
             }
 
-            if (event.data && event.data.token) {
-                // kintoneの基本情報とオリジンを保存
-                kintoneInfo = event.data;
-                kintoneOrigin = event.origin;
+            // kintoneからのレコード追加結果を受け取る
+            if (event.origin === kintoneOrigin && eventData.type === 'kintoneRecordAdded') {
+                const resultDiv = document.getElementById('result');
+                resultDiv.className = '';
+                if (eventData.success) {
+                    document.getElementById('name').value = '';
+                    document.getElementById('subject').value = '';
+                    resultDiv.textContent = 'レコードが正常に追加されました。';
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.textContent = 'レコードの追加に失敗しました。エラー: ' + eventData.error;
+                    resultDiv.classList.add('error');
+                }
             }
         });
 
@@ -174,6 +182,7 @@
         // body要素のサイズ変更を監視して、親ウィンドウに高さを通知する
         const resizeObserver = new ResizeObserver(entries => {
             for (let entry of entries) {
+                if (!kintoneOrigin) continue;
                 const height = entry.target.offsetHeight;
                 window.parent.postMessage({
                     type: 'resizeIframe',
