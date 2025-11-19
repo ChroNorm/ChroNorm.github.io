@@ -113,11 +113,28 @@
     </div>
 
     <script>
+        let kintoneInfo = null;
+
+        // kintoneからのデータを受け取る
+        window.addEventListener('message', (event) => {
+            // 送信元オリジンを検証
+            if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') {
+                return;
+            }
+            kintoneInfo = event.data;
+        });
+
         document.getElementById('kintone-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const resultDiv = document.getElementById('result');
             resultDiv.className = '';
             resultDiv.textContent = 'Adding record...';
+
+            if (!kintoneInfo) {
+                resultDiv.textContent = '有効な場所から開かれていません。';
+                resultDiv.classList.add('error');
+                return;
+            }
 
             const name = document.getElementById('name').value;
             const subject = document.getElementById('subject').value;
