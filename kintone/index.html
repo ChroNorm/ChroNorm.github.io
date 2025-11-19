@@ -4,66 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kintone Record Add Form</title>
+    <link rel="stylesheet" href="https://unpkg.com/@kintone/kintone-ui-component@1/dist/kuc.min.css">
     <style>
-        body { font-family: sans-serif; padding: 1em; }
-        .form-group { margin-bottom: 1em; }
-        label { display: block; margin-bottom: .5em; }
-        input[type="text"] { width: 100%; padding: .5em; box-sizing: border-box; }
-        button { padding: .7em 1.5em; }
+        body { 
+            font-family: sans-serif; 
+            padding: 1em; 
+            background-color: #f7f9fa;
+        }
+        .kuc-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 2em;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5em;
+        }
         #result { margin-top: 1em; }
     </style>
+    <script src="https://unpkg.com/@kintone/kintone-ui-component@1/dist/kuc.min.js"></script>
 </head>
 <body>
 
-    <h1>Kintone Record Add Form</h1>
-    <h3>更新回数:3</h3>
-    <form id="kintone-form">
-        <div class="form-group">
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" required>
-        </div>
-        <div class="form-group">
-            <label for="subject">Subject</label>
-            <input type="text" id="subject" name="subject" required>
-        </div>
-        <button type="submit">Add Record</button>
-    </form>
-
+    <div class="kuc-container">
+        <h1>Kintone Record Add Form</h1>
+        <div id="kintone-form"></div>
+    </div>
     <div id="result"></div>
 
     <script>
-        let kintoneInfo = {};
-
-        // kintoneからのデータを受け取る
-        window.addEventListener('message', (event) => {
-            if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') {
-                return;
-            }
-
-            if (event.data && event.data.token) {
-                kintoneInfo = event.data;
-                console.log('Received kintone info:', kintoneInfo);
-            }
-        });
-
-        document.getElementById('kintone-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', () => {
+            const formContainer = document.getElementById('kintone-form');
             const resultDiv = document.getElementById('result');
-            resultDiv.textContent = 'Adding record...';
 
-            const name = document.getElementById('name').value;
-            const subject = document.getElementById('subject').value;
+            const nameText = new Kuc.Text({
+                label: 'Name',
+                requiredIcon: true
+            });
 
-            // 親ウィンドウにフォームデータを送信
-            window.parent.postMessage({
-                type: 'addKintoneRecord',
-                record: {
-                    name: { value: name },
-                    subject: { value: subject }
+            const subjectText = new Kuc.Text({
+                label: 'Subject',
+                requiredIcon: true
+            });
+
+            const addButton = new Kuc.Button({
+                text: 'Add Record',
+                type: 'submit'
+            });
+
+            addButton.addEventListener('click', () => {
+                resultDiv.textContent = 'Adding record...';
+
+                const name = nameText.value;
+                const subject = subjectText.value;
+
+                if (!name || !subject) {
+                    resultDiv.textContent = 'Name and Subject are required.';
+                    return;
                 }
-            }, 'https://rpq33ai8jurt.cybozu.com');
-            
-            resultDiv.textContent = 'Record addition requested.';
+
+                // 親ウィンドウにフォームデータを送信
+                window.parent.postMessage({
+                    type: 'addKintoneRecord',
+                    record: {
+                        name: { value: name },
+                        subject: { value: subject }
+                    }
+                }, 'https://rpq33ai8jurt.cybozu.com');
+                
+                resultDiv.textContent = 'Record addition requested.';
+            });
+
+            formContainer.appendChild(nameText);
+            formContainer.appendChild(subjectText);
+            formContainer.appendChild(addButton);
         });
     </script>
 </body>
