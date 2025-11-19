@@ -124,11 +124,31 @@
             kintoneInfo = event.data;
         });
 
+        // kintoneからのレコード追加結果を受け取る
+        window.addEventListener('message', (event) => {
+            if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') {
+                return;
+            }
+            if (event.data && event.data.type === 'kintoneRecordAdded') {
+                const resultDiv = document.getElementById('result');
+                resultDiv.className = '';
+                if (event.data.success) {
+                    document.getElementById('name').value = '';
+                    document.getElementById('subject').value = '';
+                    resultDiv.textContent = 'レコードが正常に追加されました。';
+                    resultDiv.classList.add('success');
+                } else {
+                    resultDiv.textContent = 'レコードの追加に失敗しました。エラー: ' + event.data.error;
+                    resultDiv.classList.add('error');
+                }
+            }
+        });
+
         document.getElementById('kintone-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const resultDiv = document.getElementById('result');
             resultDiv.className = '';
-            resultDiv.textContent = 'Adding record...';
+            resultDiv.textContent = 'レコードを追加しています...';
 
             if (!kintoneInfo) {
                 resultDiv.textContent = '有効な場所から開かれていません。';
@@ -140,7 +160,7 @@
             const subject = document.getElementById('subject').value;
 
             if (!name || !subject) {
-                resultDiv.textContent = 'Name and Subject are required.';
+                resultDiv.textContent = '名前と件名は必須です。';
                 resultDiv.classList.add('error');
                 return;
             }
@@ -154,8 +174,9 @@
                 }
             }, 'https://rpq33ai8jurt.cybozu.com');
             
-            resultDiv.textContent = 'Record addition requested.';
-            resultDiv.classList.add('success');
+            // レコード追加リクエスト送信後、結果はkintoneからのメッセージで更新される
+            resultDiv.textContent = 'レコード追加をリクエストしました。結果をお待ちください...';
+            resultDiv.classList.remove('success', 'error'); // リクエスト中は色をリセット
         });
     </script>
 </body>
