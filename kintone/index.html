@@ -178,6 +178,18 @@
             resultDiv.textContent = 'レコード追加をリクエストしました。結果をお待ちください...';
             resultDiv.classList.remove('success', 'error'); // リクエスト中は色をリセット
         });
+
+        // body要素のサイズ変更を監視して、親ウィンドウに高さを通知する
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const height = entry.target.offsetHeight;
+                window.parent.postMessage({
+                    type: 'resizeIframe',
+                    height: height
+                }, 'https://rpq33ai8jurt.cybozu.com');
+            }
+        });
+        resizeObserver.observe(document.body);
     </script>
 </body>
 </html>
