@@ -114,33 +114,25 @@
 
     <script>
         let kintoneInfo = null;
+        let kintoneOrigin = '';
 
         // kintoneからのデータを受け取る
         window.addEventListener('message', (event) => {
-            // 送信元オリジンを検証
-            if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') {
-                return;
+            // 信頼できるオリジンからのメッセージか検証
+            // 最初にkintoneInfoを受け取るときは送信元が不明なので、event.data.originの存在で判断
+            if (kintoneOrigin && event.origin !== kintoneOrigin) {
+                if (!event.data || event.origin !== event.data.origin) return;
             }
-            kintoneInfo = event.data;
-        });
 
-        // kintoneからのレコード追加結果を受け取る
-        window.addEventListener('message', (event) => {
-            if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') {
+            if (event.data && event.data.type === 'kintoneRecordAdded') {
+                // レコード追加結果の処理
                 return;
             }
-            if (event.data && event.data.type === 'kintoneRecordAdded') {
-                const resultDiv = document.getElementById('result');
-                resultDiv.className = '';
-                if (event.data.success) {
-                    document.getElementById('name').value = '';
-                    document.getElementById('subject').value = '';
-                    resultDiv.textContent = 'レコードが正常に追加されました。';
-                    resultDiv.classList.add('success');
-                } else {
-                    resultDiv.textContent = 'レコードの追加に失敗しました。エラー: ' + event.data.error;
-                    resultDiv.classList.add('error');
-                }
+
+            if (event.data && event.data.token) {
+                // kintoneの基本情報とオリジンを保存
+                kintoneInfo = event.data;
+                kintoneOrigin = event.origin;
             }
         });
 
@@ -172,7 +164,7 @@
                     name: { value: name },
                     subject: { value: subject }
                 }
-            }, 'https://rpq33ai8jurt.cybozu.com');
+            }, kintoneOrigin);
             
             // レコード追加リクエスト送信後、結果はkintoneからのメッセージで更新される
             resultDiv.textContent = 'レコード追加をリクエストしました。結果をお待ちください...';
@@ -186,7 +178,7 @@
                 window.parent.postMessage({
                     type: 'resizeIframe',
                     height: height
-                }, 'https://rpq33ai8jurt.cybozu.com');
+                }, kintoneOrigin);
             }
         });
         resizeObserver.observe(document.body);
