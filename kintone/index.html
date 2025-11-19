@@ -35,12 +35,8 @@
 
         // kintoneからのデータを受け取る
         window.addEventListener('message', (event) => {
-            // 送信元のオリジンをチェックしてセキュリティを確保
-            if (event.origin !== `https://${location.hostname}`) {
-                 // kintoneのドメインは動的に変わるため、location.hostnameでチェック
-                 // GitHub Pagesでテストする場合は、ローカルのkintone環境のドメインを直接指定するか、
-                 // event.originをコンソールで確認して一時的に許可してください。
-                 // 例: if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') return;
+            if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') {
+                return;
             }
 
             if (event.data && event.data.token) {
