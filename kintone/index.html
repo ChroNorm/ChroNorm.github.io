@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kintone Record Add Form</title>
+    <style>
+        body { font-family: sans-serif; padding: 1em; }
+        .form-group { margin-bottom: 1em; }
+        label { display: block; margin-bottom: .5em; }
+        input[type="text"] { width: 100%; padding: .5em; box-sizing: border-box; }
+        button { padding: .7em 1.5em; }
+        #result { margin-top: 1em; }
+    </style>
+</head>
+<body>
+
+    <h1>Kintone Record Add Form</h1>
+    <form id="kintone-form">
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" required>
+        </div>
+        <button type="submit">Add Record</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        let kintoneInfo = {};
+
+        // kintoneからのデータを受け取る
+        window.addEventListener('message', (event) => {
+            // 送信元のオリジンをチェックしてセキュリティを確保
+            if (event.origin !== `https://${location.hostname}`) {
+                 // kintoneのドメインは動的に変わるため、location.hostnameでチェック
+                 // GitHub Pagesでテストする場合は、ローカルのkintone環境のドメインを直接指定するか、
+                 // event.originをコンソールで確認して一時的に許可してください。
+                 // 例: if (event.origin !== 'https://rpq33ai8jurt.cybozu.com') return;
+            }
+
+            if (event.data && event.data.token) {
+                kintoneInfo = event.data;
+                console.log('Received kintone info:', kintoneInfo);
+            }
+        });
+
+        document.getElementById('kintone-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Adding record...';
+
+            if (!kintoneInfo.token || !kintoneInfo.subdomain || !kintoneInfo.appId) {
+                resultDiv.textContent = 'Error: Kintone info not received.';
+                return;
+            }
+
+            const name = document.getElementById('name').value;
+            const subject = document.getElementById('subject').value;
+
+            const body = {
+                "app": kintoneInfo.appId,
+                "record": {
+                    "name": { "value": name },
+                    "subject": { "value": subject }
+                }
+            };
+
+            try {
+                const response = await fetch(`https://` + kintoneInfo.subdomain + `.cybozu.com/k/v1/record.json`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Cybozu-API-Token': kintoneInfo.token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                const jsonResponse = await response.json();
+                resultDiv.textContent = 'Record added! Response: ' + JSON.stringify(jsonResponse);
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
