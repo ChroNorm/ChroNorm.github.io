@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="unsafe-url"> 
+    <title>過去問サイトへ遷移中...</title>
+</head>
+<body>
+    <p>過去問サイトへ移動しています。しばらくお待ちください...</p>
+
+    <form id="postForm" action="https://www.ap-siken.com/apkakomon_pm.php" method="POST" style="display:none;">
+        
+        <input type="hidden" name="times[]" id="examTime" value="">
+        <input type="hidden" name="categories[]" id="examCategory" value="">
+        
+        <input type="submit" value="Go>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('postForm');
+            
+            // 1. URLからクエリパラメータ（?time=...&category=...）を解析
+            const params = new URLSearchParams(window.location.search);
+            
+            const timeValue = params.get('time');
+            const categoryValue = params.get('category');
+            
+            // 2. 値を非表示フォームのフィールドに設定
+            if (timeValue && categoryValue) {
+                document.getElementById('examTime').value = timeValue; 
+                document.getElementById('examCategory').value = categoryValue; 
+                
+                // 3. フォームを自動送信し、Refererをこのページ（github.io）に設定
+                form.submit();
+            } else {
+                // 値が取得できなかった場合の処理
+                console.error("遷移に必要な試験回と科目の値がありません。");
+            }
+        });
+    </script>
+</body>
+</html>
