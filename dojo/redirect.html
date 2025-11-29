@@ -23,13 +23,15 @@
             // 1. URLからクエリパラメータ（?time=...&category=...）を解析
             const params = new URLSearchParams(window.location.search);
             
-            const timeValue = params.get('time');
-            const categoryValue = params.get('category');
-            console.log(timeValue + ' ' + categoryValue);
+            const yearValue = params.get('year');
+            const seasonValue = params.get('season').includes('春') ? 'haru' : 'aki';
+            const fieldValue = params.get('field');
+            console.log(yearValue + ' ' + seasonValue + ' ' + fieldValue);
             // 2. 値を非表示フォームのフィールドに設定
-            if (timeValue && categoryValue) {
+            if (yearValue && seasonValue && fieldValue) {
+                const timeValue = `${(yearValue.includes("元") ? '1' : yearValue.match(/(\d{1,2})年/)[1]).padStart(2, '0')}_${seasonValue}`;
                 document.getElementById('examTime').value = timeValue; 
-                document.getElementById('examCategory').value = categoryValue; 
+                document.getElementById('examCategory').value = fieldValue; 
                 
                 // 3. フォームを自動送信し、Refererをこのページ（github.io）に設定
                 form.submit();
