@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="referrer" content="unsafe-url"> 
-    <title>過去問サイトへ遷移中...</title>
+    <title>遷移中...</title>
 </head>
 <body>
-    <p>過去問サイトへ移動しています。しばらくお待ちください...</p>
+    <p>遷移中です。しばらくお待ちください...</p>
 
     <form id="postForm" action="https://www.ap-siken.com/apkakomon_pm.php" method="POST" style="display:none;">
         
@@ -29,7 +29,7 @@
             console.log(yearValue + ' ' + seasonValue + ' ' + fieldValue);
             // 2. 値を非表示フォームのフィールドに設定
             if (yearValue && seasonValue && fieldValue) {
-                const timeValue = `${(yearValue.includes("元") ? '1' : yearValue.match(/(\d{1,2})年/)[1]).padStart(2, '0')}_${seasonValue}`;
+                const timeValue = `${(yearValue.includes("元") ? '1' : yearValue.match(/(\d{1,2})年/)[1]).padStart(2, '0')}_${seasonValue}`.replace('23_haru', '23_toku');                
                 document.getElementById('examTime').value = timeValue; 
                 document.getElementById('examCategory').value = fieldValue; 
                 
@@ -38,6 +38,7 @@
             } else {
                 // 値が取得できなかった場合の処理
                 console.error("遷移に必要な試験回と科目の値がありません。");
+                document.querySelector('p').textContent = "遷移に必要な試験回と科目の値がありません。";
             }
         });
     </script>
