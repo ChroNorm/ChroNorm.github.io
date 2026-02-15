@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P4Gコミュ管理</title>
+    <link rel="icon" href="favicon.ico">
+    <style>
+        html {
+            overflow-y: scroll;
+        }
+
+        :root {
+            --p4-yellow: #ffe600;
+            --p4-black: #101010;
+            --p4-orange: #ff6600;
+            --p4-purple: #9055a2;
+            --p4-gray: #e0e0e0;
+            --p4-bg-pattern: repeating-linear-gradient(45deg,
+                    #ffe600,
+                    #ffe600 20px,
+                    #f5dd00 20px,
+                    #f5dd00 40px);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, "Meiryo", sans-serif;
+            background: var(--p4-bg-pattern);
+            color: var(--p4-black);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: var(--p4-bg-pattern);
+            background-attachment: fixed;
+        }
+
+        header {
+            background-color: var(--p4-black);
+            color: var(--p4-yellow);
+            padding: 15px 30px;
+            border-radius: 4px;
+            transform: skew(-10deg);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-style: italic;
+            letter-spacing: 2px;
+            transform: skew(10deg);
+        }
+
+        .reset-btn {
+            background-color: #ff3333;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transform: skew(10deg);
+            transition: all 0.2s;
+            border: 2px solid white;
+        }
+
+        .reset-btn:hover {
+            background-color: #cc0000;
+            transform: skew(10deg) scale(1.05);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border: 4px solid var(--p4-black);
+            box-shadow: 15px 15px 0px rgba(0, 0, 0, 0.8);
+            padding: 25px;
+            min-height: 80vh;
+            
+            /* Grid設定 */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 20px;
+            align-content: start;
+        }
+
+        /* ★新設: コンテナ内の先頭に置く注意書きエリア */
+        .intro-note {
+            /* これが重要：グリッドの1列目から最後の列までを占有する */
+            grid-column: 1 / -1;
+            
+            background-color: #f9f9f9;
+            border: 2px dashed #ccc;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .intro-note h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+            color: var(--p4-black);
+            border-bottom: 2px solid var(--p4-yellow);
+            display: inline-block;
+        }
+
+        /* カードデザイン */
+        .commu-card {
+            background-color: white;
+            border: 3px solid var(--p4-black);
+            padding-top: 15px;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .commu-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.3);
+        }
+
+        .commu-card-content {
+            padding: 0 15px 15px 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .commu-card.max-rank {
+            border-color: var(--p4-orange);
+            background-color: #fff8f0;
+        }
+
+        .commu-card.status-ready {
+            animation: pulse-border 2s infinite;
+        }
+
+        .commu-card.status-unknown {
+            border-style: dashed;
+            background-color: #f8f8f8;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(255, 102, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 102, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 102, 0, 0); }
+        }
+
+        .arcana-name {
+            font-size: 0.85em;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .chara-name {
+            font-size: 1.3em;
+            font-weight: 800;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--p4-yellow);
+            display: inline-block;
+            padding-bottom: 2px;
+        }
+
+        /* ★修正: 3.0emに変更 */
+        .schedule-location {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 15px;
+            min-height: 3.0em; 
+            line-height: 1.3;
+        }
+
+        /* ランク操作エリア */
+        .rank-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: auto; 
+            margin-bottom: 5px;
+        }
+
+        .rank-display {
+            font-size: 2em;
+            font-weight: 900;
+            width: 60px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rank-display.is-max {
+            color: var(--p4-orange);
+            font-size: 1.5em;
+        }
+
+        .btn {
+            width: 40px;
+            height: 40px;
+            font-size: 1.5em;
+            border: 2px solid var(--p4-black);
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.1s;
+            user-select: none;
+        }
+
+        .btn:active {
+            background: var(--p4-yellow);
+            transform: scale(0.95);
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #ccc;
+        }
+
+        .rank-up-note {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: bold;
+            margin-bottom: -5px;
+            height: 1.2em;
+        }
+
+        /* ステータスボタン */
+        .status-controls {
+            display: flex;
+            border-top: 2px solid var(--p4-black);
+            margin-top: auto;
+        }
+
+        .status-select-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.1s;
+            background: var(--p4-gray);
+            color: #999;
+            user-select: none;
+        }
+
+        .status-select-btn:not(:last-child) {
+            border-right: 1px solid var(--p4-black);
+        }
+
+        .status-select-btn:hover:not(:disabled) {
+            filter: brightness(0.95);
+        }
+
+        .status-select-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-select-btn.active-0 {
+            background: var(--p4-black);
+            color: white;
+        }
+
+        .status-select-btn.active-1 {
+            background: var(--p4-yellow);
+            color: var(--p4-black);
+        }
+
+        .status-select-btn.active-2 {
+            background: var(--p4-purple);
+            color: white;
+        }
+
+        .status-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            border: 2px solid white;
+            transform: rotate(15deg);
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .commu-card.status-ready .status-icon {
+            background: var(--p4-orange);
+            color: white;
+            opacity: 1;
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        .commu-card.status-ready .status-icon::after {
+            content: "!";
+        }
+
+        .commu-card.status-unknown .status-icon {
+            background: var(--p4-purple);
+            color: white;
+            opacity: 1;
+            transform: rotate(-10deg) scale(1);
+        }
+
+        .commu-card.status-unknown .status-icon::after {
+            content: "?";
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                transform: none;
+                text-align: center;
+                gap: 10px;
+            }
+
+            h1,
+            .reset-btn {
+                transform: none;
+            }
+
+            .container {
+                padding: 10px;
+                width: 95%;
+                margin: 0 auto;
+                border-width: 2px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>P4G COMMUNITY TRACKER</h1>
+        <button class="reset-btn" onclick="resetAll()">ALL RESET</button>
+    </header>
+
+    <div class="container" id="app">
+    </div>
+
+    <script>
+        // 静的マスタデータ
+        const masterData = [
+            { id: 1, arcana: "0. 愚者", name: "自称特別捜査隊", schedule: "イベント進行", location: null },
+            { id: 2, arcana: "I. 魔術師", name: "花村 陽介", schedule: "月・木・土・日 / 昼", location: "教室棟2F廊下 / ジュネス" },
+            { id: 3, arcana: "II. 女教皇", name: "天城 雪子", schedule: "月・火・水・木 / 昼", location: "教室棟1F廊下 / 商店街南側" },
+            { id: 4, arcana: "III. 女帝", name: "マーガレット", schedule: "毎日", location: "ベルベットルーム" },
+            { id: 5, arcana: "IV. 皇帝", name: "巽 完二", schedule: "水・木・土・日 / 昼", location: "実習棟 1F廊下 / 商店街北側" },
+            { id: 6, arcana: "V. 法王", name: "堂島 遼太郎", schedule: "不定期 / 夜", location: "堂島家" },
+            { id: 7, arcana: "VI. 恋愛", name: "久慈川 りせ", schedule: "金・土・日 / 昼", location: "教室棟 1F廊下 / 商店街南側" },
+            { id: 8, arcana: "VII. 戦車", name: "里中 千枝", schedule: "月・火・木・土 / 昼", location: "学校 屋上 / 商店街南側" },
+            { id: 9, arcana: "VIII. 正義", name: "堂島 菜々子", schedule: "不定期 / 夜", location: "堂島家" },
+            { id: 10, arcana: "IX. 隠者", name: "キツネ", schedule: "毎日 / 昼", location: "辰姫神社" },
+            { id: 11, arcana: "X. 運命", name: "白鐘 直斗", schedule: "月・火・水・木・土 (不定期かも？) / 昼", location: "教室棟 1F廊下 / 鮫川河川敷" },
+            { id: 12, arcana: "XI. 剛毅", name: "運動部の同級生たち", schedule: "火・木・土 / 昼", location: "教室棟 2F廊下" },
+            { id: 13, arcana: "XII. 刑死者", name: "小西 尚紀", schedule: "月・火・水・木 / 昼", location: "商店街北側" },
+            { id: 14, arcana: "XIII. 死神", name: "老婦人", schedule: "日または祝日 / 昼", location: "河原" },
+            { id: 15, arcana: "XIV. 節制", name: "学童保育の若い母親", schedule: "月・金・土 / 昼", location: "バス停" },
+            { id: 16, arcana: "XV. 悪魔", name: "ナース", schedule: "水・木・金 / 夜", location: "稲羽市立病院" },
+            { id: 17, arcana: "XVI. 塔", name: "家庭教師先の生徒", schedule: "火・木・土 / 夜", location:"家庭教師先" },
+            { id: 18, arcana:"XVII. 星", name:"クマ", schedule:"イベント進行", location: null },
+            { id: 19, arcana: "XVIII. 月", name: "海老原 あい", schedule: "水・木・金 / 昼", location: "教室棟 1F廊下" },
+            { id: 20, arcana: "XIX. 太陽", name: "小沢 or 松永", schedule: "月・火・木 / 昼", location: "教室棟 2F廊下" },
+            { id: 21, arcana: "XX. 審判", name: "真実を追う仲間たち", schedule: "イベント進行", location: null },
+            { id: 22, arcana: "道化師", name: "足立 透", schedule: "不定期 / 昼・夜", location: "ジュネス / 商店街南側" },
+            { id: 23, arcana: "XX. 永劫", name: "マリー", schedule: "水・土・日 / 昼", location:"商店街南側" }
+        ];
+
+        let commuData = [];
+        const STORAGE_KEY = 'p4_commu_data';
+
+        function init() {
+            const savedJson = localStorage.getItem(STORAGE_KEY);
+            let savedState = [];
+
+            if (savedJson) {
+                try {
+                    savedState = JSON.parse(savedJson);
+                } catch (e) {
+                    console.error("Save data parse error", e);
+                }
+            }
+
+            commuData = masterData.map(master => {
+                const found = savedState.find(s => s.id === master.id);
+                return {
+                    ...master,
+                    rank: found ? found.rank : 0,
+                    status: found ? found.status : 0
+                };
+            });
+
+            render();
+        }
+
+        function saveData() {
+            const dataToSave = commuData.map(item => ({
+                id: item.id,
+                rank: item.rank,
+                status: item.status
+            }));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+        }
+
+        function changeRank(index, delta) {
+            const item = commuData[index];
+            let newRank = item.rank + delta;
+
+            if (newRank < 0) newRank = 0;
+            if (newRank > 10) newRank = 10;
+
+            item.rank = newRank;
+
+            if (delta > 0) {
+                if (newRank < 10) {
+                    item.status = 2; // 未確認
+                } else {
+                    item.status = 0; // MAX
+                }
+            }
+
+            saveData();
+            render();
+        }
+
+        function setStatus(index, status) {
+            const item = commuData[index];
+            if (item.rank < 10) {
+                item.status = status;
+                saveData();
+                render();
+            }
+        }
+
+        function resetAll() {
+            if (confirm("全てのデータを初期状態に戻しますか？")) {
+                localStorage.removeItem(STORAGE_KEY);
+                init();
+            }
+        }
+
+        function render() {
+            const container = document.getElementById('app');
+            container.innerHTML = '';
+
+            // ★ここに注意書きを追加
+            // grid-column: 1 / -1 によって、このdivだけは横幅いっぱいになります
+            const noteDiv = document.createElement('div');
+            noteDiv.className = 'intro-note';
+            noteDiv.innerHTML = `
+                <h2>Guide</h2><br>
+                <strong>不可:</strong> 今はランクが上がらない or まだ会えない<br>
+                <strong style="color:var(--p4-orange)">可能！:</strong> ランクアップ可能<br>
+                <strong style="color:var(--p4-purple)">未確認:</strong> ランクアップ可能か未確認の状態。次に会えるときに確認<br>
+                という風に使ってくれたらうれしいです<br>
+                ※天候やテスト週間、物語の進行状況などによって会えなかったり会える場所が違う時期があります。<br>　詳細は各攻略サイトを参照してください。
+            `;
+            container.appendChild(noteDiv);
+
+            commuData.forEach((item, index) => {
+                const isMax = item.rank === 10;
+
+                let cardClass = 'commu-card';
+                if (isMax) cardClass += ' max-rank';
+                if (!isMax && item.status === 1) cardClass += ' status-ready';
+                if (!isMax && item.status === 2) cardClass += ' status-unknown';
+
+                let rankText = item.rank;
+                if (isMax) rankText = "MAX";
+
+                const locationHtml = item.location ? `<div>${item.location}</div>` : '';
+
+                const card = document.createElement('div');
+                card.className = cardClass;
+
+                const statusControlsHtml = `
+                    <div class="status-controls">
+                        <button class="status-select-btn ${item.status === 0 ? 'active-0' : ''}" 
+                                onclick="setStatus(${index}, 0)" 
+                                ${isMax ? 'disabled' : ''}>不可</button>
+                        <button class="status-select-btn ${item.status === 1 ? 'active-1' : ''}" 
+                                onclick="setStatus(${index}, 1)" 
+                                ${isMax ? 'disabled' : ''}>可能！</button>
+                        <button class="status-select-btn ${item.status === 2 ? 'active-2' : ''}" 
+                                onclick="setStatus(${index}, 2)" 
+                                ${isMax ? 'disabled' : ''}>未確認</button>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <div class="status-icon"></div>
+                    <div class="commu-card-content">
+                        <div class="arcana-name">${item.arcana}</div>
+                        <div class="chara-name">${item.name}</div>
+                        <div class="schedule-location">
+                            <div>${item.schedule || ""}</div>
+                            ${locationHtml}
+                        </div>
+                        <div class="rank-control">
+                            <button class="btn" onclick="changeRank(${index}, -1)" ${item.rank === 0 ? 'disabled' : ''}>-</button>
+                            <div class="rank-display ${isMax ? 'is-max' : ''}">${rankText}</div>
+                            <button class="btn" onclick="changeRank(${index}, 1)" ${isMax ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="rank-up-note">ランクアップ...</div>
+                    </div>
+                    ${statusControlsHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
