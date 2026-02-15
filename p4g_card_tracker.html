@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P4Gスキルカード管理</title>
+    <link rel="icon" href="favicon.ico">
+    <style>
+        html {
+            overflow-y: scroll;
+            height: 100%;
+        }
+
+        :root {
+            --p4-yellow: #ffe600;
+            --p4-black: #101010;
+            --p4-gray: #333;
+            --p4-orange: #ff6600;
+            --p4-green: #00aa00;
+            --p4-red: #cc0000;
+            /* 背景パターン定義 */
+            --p4-bg-pattern: repeating-linear-gradient(45deg,
+                    #ffe600,
+                    #ffe600 20px,
+                    #f5dd00 20px,
+                    #f5dd00 40px);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, "Meiryo", sans-serif;
+            color: var(--p4-black);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* --- 背景固定用の疑似要素 --- */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: var(--p4-bg-pattern);
+            background-attachment: fixed;
+        }
+
+        /* --- ヘッダーエリア --- */
+        header {
+            background-color: var(--p4-black);
+            color: var(--p4-yellow);
+            padding: 15px 30px;
+            border-radius: 4px;
+            transform: skew(-10deg);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-style: italic;
+            letter-spacing: 2px;
+            transform: skew(10deg);
+        }
+
+        .reset-btn {
+            background-color: #ff3333;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transform: skew(10deg);
+            transition: all 0.2s;
+            border: 2px solid white;
+        }
+
+        .reset-btn:hover {
+            background-color: #cc0000;
+            transform: skew(10deg) scale(1.05);
+        }
+
+        /* --------------------------------------- */
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border: 4px solid var(--p4-black);
+            box-shadow: 15px 15px 0px rgba(0, 0, 0, 0.8);
+            padding: 25px;
+            min-height: 80vh;
+        }
+
+        .intro-note {
+            background-color: #f9f9f9;
+            border: 2px dashed #ccc;
+            padding: 15px;
+            margin-bottom: 25px;
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .intro-note h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+            color: var(--p4-black);
+            border-bottom: 2px solid var(--p4-yellow);
+            display: inline-block;
+        }
+
+        /* 統計情報エリア */
+        .stats-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-around;
+            background: var(--p4-gray);
+            color: white;
+            padding: 15px;
+            margin-bottom: 25px;
+            font-weight: bold;
+            border-radius: 4px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .stat-val {
+            font-size: 1.2em;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        /* コントロールエリア */
+        .controls {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 15px;
+            border: 2px solid var(--p4-black);
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            border: 2px solid var(--p4-black);
+            flex-grow: 1;
+            font-size: 16px;
+            outline: none;
+            background: #f9f9f9;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--p4-orange);
+            background: #fff;
+        }
+
+        /* 複数選択フィルターのボタングループ */
+        .multi-filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #ccc;
+        }
+
+        .filter-block {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex-grow: 1;
+            min-width: 250px;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 2px;
+        }
+
+        .filter-label {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #666;
+        }
+
+        /* 全選択・クリア トグルボタン */
+        .toggle-all-btn {
+            background: white;
+            border: 1px solid #aaa;
+            color: #555;
+            font-size: 0.75em;
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 3px 10px;
+            font-weight: bold;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .toggle-all-btn:hover {
+            background: #eee;
+            color: #333;
+        }
+
+        .toggle-all-btn.is-clear {
+            background: var(--p4-black);
+            color: var(--p4-yellow);
+            border-color: var(--p4-black);
+        }
+
+        .toggle-all-btn.is-clear:hover {
+            background: #333;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .filter-chk-btn {
+            padding: 6px 12px;
+            border: 2px solid #ccc;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+            color: #666;
+            border-radius: 4px;
+            user-select: none;
+            transition: all 0.1s;
+        }
+
+        .filter-chk-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .filter-chk-btn.active {
+            border-color: var(--p4-black);
+            background: var(--p4-black);
+            color: var(--p4-yellow);
+        }
+
+        /* お気に入りトグル */
+        .fav-filter {
+            margin-top: auto;
+            align-self: flex-start;
+        }
+
+        .filter-chk-btn.fav-filter.active {
+            border-color: #d4a000;
+            background: #d4a000;
+            color: white;
+        }
+
+        /* カードリスト */
+        .card-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 15px;
+        }
+
+        .skill-card {
+            border: 2px solid var(--p4-black);
+            background: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .skill-header {
+            background: var(--p4-black);
+            color: white;
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            border-bottom: 2px solid var(--p4-black);
+            min-height: 40px;
+        }
+
+        .skill-name {
+            font-size: 1em;
+            flex-grow: 1;
+            margin-right: 5px;
+        }
+
+        .category-badge {
+            background: var(--p4-yellow);
+            color: var(--p4-black);
+            padding: 2px 8px;
+            font-size: 0.75em;
+            font-weight: 800;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .fav-star {
+            cursor: pointer;
+            font-size: 1.4em;
+            color: #ccc;
+            margin-left: 8px;
+            transition: color 0.2s;
+            user-select: none;
+        }
+
+        .fav-star.active {
+            color: #ffd700;
+            text-shadow: 0 0 2px black;
+        }
+
+        .skill-body {
+            padding: 10px;
+            flex-grow: 1;
+            font-size: 0.85em;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 4px;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .info-val {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .source-section {
+            margin-top: 4px;
+        }
+
+        .source-label {
+            font-size: 0.75em;
+            color: #666;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .source-text {
+            display: block;
+            font-weight: 600;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .source-text.no-source {
+            color: #999;
+            font-weight: normal;
+        }
+
+        .spoiler-mask {
+            cursor: pointer;
+            user-select: none;
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .spoiler-revealed {
+            background: transparent;
+            color: inherit;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ステータスボタン */
+        .status-controls {
+            display: flex;
+            border-top: 2px solid var(--p4-black);
+        }
+
+        .status-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8em;
+            transition: all 0.1s;
+        }
+
+        .status-btn:not(:last-child) {
+            border-right: 1px solid var(--p4-black);
+        }
+
+        .status-btn {
+            background: #e0e0e0;
+            color: #999;
+        }
+
+        .status-btn:hover {
+            background: #d0d0d0;
+        }
+
+        .skill-card.status-none .status-btn[data-status="none"] {
+            background: var(--p4-red);
+            color: white;
+        }
+
+        .skill-card.status-extractable .status-btn[data-status="extractable"] {
+            background: var(--p4-orange);
+            color: white;
+        }
+
+        .skill-card.status-owned .status-btn[data-status="owned"] {
+            background: var(--p4-green);
+            color: white;
+        }
+
+        .skill-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .skill-card.status-owned {
+            border-color: var(--p4-green);
+        }
+
+        .skill-card.status-owned .skill-header {
+            background: var(--p4-green);
+        }
+
+        .skill-card.status-extractable {
+            border-color: var(--p4-orange);
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                transform: none;
+                text-align: center;
+                gap: 10px;
+            }
+
+            h1,
+            .reset-btn {
+                transform: none;
+            }
+
+            .container {
+                padding: 10px;
+                width: 95%;
+                margin: 0 auto;
+                border-width: 2px;
+            }
+
+            .card-list {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                top: 0;
+                padding: 10px;
+            }
+
+            .filter-chk-btn {
+                flex-grow: 1;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>P4G SKILL CARD TRACKER</h1>
+        <button class="reset-btn" onclick="resetData()">ALL RESET</button>
+    </header>
+
+    <div class="container">
+
+        <div class="intro-note">
+            <h2>Guide</h2><br>
+            <strong>未所持:</strong> まだそのスキルカードを所持していない<br>
+            <strong style="color:var(--p4-orange)">抽出可:</strong> 抽出可能ペルソナは所持している<br>
+            <strong style="color:var(--p4-green)">所持:</strong> そのスキルカードを所持している<br>
+            という風に使ってくれたらうれしいです<br>
+            ※アリ・ダンスはスキルカード化できないので早めに用意するといいかも
+        </div>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-val" id="stat-total">0</span>
+                <span class="stat-label">Total</span>
+            </div>
+            <div class="stat-item" style="color: #ff9999;">
+                <span class="stat-val" id="stat-missing">0</span>
+                <span class="stat-label">未所持</span>
+            </div>
+            <div class="stat-item" style="color: var(--p4-orange);">
+                <span class="stat-val" id="stat-extractable">0</span>
+                <span class="stat-label">抽出可</span>
+            </div>
+            <div class="stat-item" style="color: var(--p4-green);">
+                <span class="stat-val" id="stat-owned">0</span>
+                <span class="stat-label">所持</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-val" id="stat-percent">0%</span>
+                <span class="stat-label">収集率</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-row">
+                <input type="text" id="search-input" placeholder="スキル名、ペルソナ名で検索">
+            </div>
+
+            <div class="multi-filter-section">
+                <div class="filter-block">
+                    <div class="filter-header">
+                        <span class="filter-label">所持状態</span>
+                        <button class="toggle-all-btn" data-target="filter-status"
+                            onclick="toggleFilterGroup('filter-status')">全選択</button>
+                    </div>
+                    <div class="checkbox-group" id="filter-status">
+                        <div class="filter-chk-btn" data-val="owned">所持</div>
+                        <div class="filter-chk-btn" data-val="extractable">抽出可</div>
+                        <div class="filter-chk-btn" data-val="none">未所持</div>
+                    </div>
+                </div>
+
+                <div class="filter-block">
+                    <div class="filter-header">
+                        <span class="filter-label">カテゴリ</span>
+                        <button class="toggle-all-btn" data-target="filter-category"
+                            onclick="toggleFilterGroup('filter-category')">全選択</button>
+                    </div>
+                    <div class="checkbox-group" id="filter-category">
+                        <div class="filter-chk-btn" data-val="物理">物理</div>
+                        <div class="filter-chk-btn" data-val="魔法">魔法</div>
+                        <div class="filter-chk-btn" data-val="回復・補助">回復・補助</div>
+                        <div class="filter-chk-btn" data-val="自動効果">自動効果</div>
+                    </div>
+                </div>
+
+                <div class="filter-block">
+                    <div class="filter-header">
+                        <span class="filter-label">ランク</span>
+                        <button class="toggle-all-btn" data-target="filter-rank"
+                            onclick="toggleFilterGroup('filter-rank')">全選択</button>
+                    </div>
+                    <div class="checkbox-group" id="filter-rank">
+                    </div>
+                </div>
+
+                <div class="filter-block" style="flex-grow: 0;">
+                    <div class="filter-header">
+                        <span class="filter-label">その他</span>
+                    </div>
+                    <div class="filter-chk-btn fav-filter" id="fav-filter-btn" onclick="toggleFavFilter()">★ お気に入りのみ
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="card-list" class="card-list">
+        </div>
+    </div>
+
+    <script>
+        // データ定義
+        const skillData = [
+            // --- 物理 ---
+            { id: 101, name: "アサルトダイブ", rank: "3", source: "なし", cost: 10000 },
+            { id: 102, name: "ソニックパンチ", rank: "2", source: "なし", cost: 10000 },
+            { id: 103, name: "二連牙", rank: "2", source: "なし", cost: 10000 },
+            { id: 104, name: "毒串刺し", rank: "2", source: "戦車 エリゴール(初期)", cost: 10000 },
+            { id: 105, name: "脳天落とし", rank: "2", source: "剛毅 ザントマン(Lv6)", cost: 10000 },
+            { id: 106, name: "ヒステリービンタ", rank: "2", source: "魔術師 オロバス(初期)", cost: 10000 },
+            { id: 107, name: "マズルシュート", rank: "2", source: "正義 アークエンジェル(Lv13)", cost: 10000 },
+            { id: 108, name: "両腕落とし", rank: "2", source: "剛毅 ヴァルキリー(Lv11)", cost: 10000 },
+            { id: 109, name: "シングルショット", rank: "2", source: "なし", cost: 10000 },
+            { id: 110, name: "キルラッシュ", rank: "3", source: "剛毅 ティターン(Lv18)", cost: 15000 },
+            { id: 111, name: "電光石火", rank: "3", source: "女帝 ヤクシニー(Lv20)", cost: 15000 },
+            { id: 112, name: "ダブルシュート", rank: "3", source: "なし", cost: 15000 },
+            { id: 113, name: "疾風斬", rank: "3", source: "戦車 アレス(初期)", cost: 15000 },
+            { id: 114, name: "セルブレイカー", rank: "3", source: "刑死者 ヨモツイクサ(初期)", cost: 15000 },
+            { id: 115, name: "ブレインシェイク", rank: "3", source: "悪魔 ヴェータラ(Lv22)", cost: 15000 },
+            { id: 116, name: "暴れまくり", rank: "3", source: "死神 マタドール(Lv27)", cost: 15000 },
+            { id: 117, name: "パワースラッシュ", rank: "4", source: "正義 パワー(Lv30)", cost: 25000 },
+            { id: 118, name: "マインドスライス", rank: "4", source: "道化師 ペイルライダー(初期)", cost: 25000 },
+            { id: 119, name: "クレイジーチェーン", rank: "4", source: "女帝 ゴルゴン(Lv35)", cost: 25000 },
+            { id: 120, name: "シールボムズ", rank: "4", source: "節制 ミトラ(初期)", cost: 25000 },
+            { id: 121, name: "バスタアタック", rank: "4", source: "剛毅 オニ(初期)", cost: 25000 },
+            { id: 122, name: "デッドエンド", rank: "5", source: "永劫 ナーガラジャ(初期)", cost: 40000 },
+            { id: 123, name: "剛殺斬", rank: "5", source: "剛毅 ハヌマーン(初期)", cost: 40000 },
+            { id: 124, name: "ヒートウェイブ", rank: "5", source: "刑死者 ヤツフサ(Lv51)", cost: 40000 },
+            { id: 125, name: "金剛発破", rank: "5", source: "法王 フラロウス(Lv38)", cost: 40000 },
+            { id: 126, name: "木っ端微塵斬り", rank: "5", source: "愚者 オセ(初期)", cost: 40000 },
+            { id: 127, name: "黒点撃", rank: "5", source: "刑死者 オルトロス(初期)", cost: 40000 },
+            { id: 128, name: "ミリオンシュート", rank: "6", source: "塔 トウテツ(Lv41)", cost: 50000 },
+            { id: 129, name: "利剣乱舞", rank: "6", source: "法王 ホクトセイクン(Lv47)", cost: 50000 },
+            { id: 130, name: "烈風波", rank: "6", source: "恋愛 キュベレ(初期)", cost: 50000 },
+            { id: 131, name: "ポイズンアロー", rank: "6", source: "隠者 ヒトコトヌシ(初期)", cost: 50000 },
+            { id: 132, name: "マスタードボム", rank: "6", source: "魔術師 ランダ(Lv51)", cost: 50000 },
+            { id: 133, name: "ナバスネビュラ", rank: "6", source: "悪魔 パズス(Lv41)", cost: 50000 },
+            { id: 134, name: "アイオンの雨", rank: "6", source: "刑死者 トウコツ(初期)", cost: 50000 },
+            { id: 135, name: "ギガンフィスト", rank: "7", source: "法王ケルベロス(初期)", cost: 60000 },
+            { id: 136, name: "デスバウンド", rank: "7", source: "戦車 トール(初期)", cost: 60000 },
+            { id: 137, name: "アローシャワー", rank: "7", source: "塔 アバドン(初期)", cost: 60000 },
+            { id: 138, name: "五月雨斬り", rank: "7", source: "塔 マサカド(初期)", cost: 60000 },
+            { id: 139, name: "バイラスウェイブ", rank: "7", source: "女教皇 ツィツィミトル(初期)", cost: 60000 },
+            { id: 140, name: "刹那五月雨撃", rank: "8", source: "死神 マハカーラ(初期)", cost: 70000 },
+            { id: 141, name: "べノンザッパー", rank: "8", source: "皇帝 パピルサグ(初期)", cost: 70000 },
+            { id: 142, name: "霧雨昇天撃", rank: "8", source: "剛毅 ジークフリード(初期)", cost: 70000 },
+            { id: 143, name: "マッドアサルト", rank: "8", source: "戦車 キンキ(初期)", cost: 70000 },
+            { id: 144, name: "アカシャアーツ", rank: "9", source: "正義 メルキセデク(初期)", cost: 80000 },
+            { id: 145, name: "ブレイブザッパー", rank: "9", source: "戦車 アタバク(Lv74)", cost: 80000 },
+            { id: 146, name: "アグネヤストラ", rank: "9", source: "月 サンダルフォン(Lv88)", cost: 80000 },
+            { id: 147, name: "ゴッドハンド", rank: "10", source: "審判 アルダー(初期)", cost: 150000 },
+            { id: 148, name: "イノセントタック", rank: "10", source: "悪魔 ベルゼブブ(Lv83)", cost: 150000 },
+            { id: 149, name: "空間殺法", rank: "10", source: "剛毅 ザオウゴンゲン(Lv96)", cost: 150000 },
+
+            // --- 魔法 ---
+            { id: 201, name: "アギ", rank: "1", source: "悪魔 ウコバク(初期)", cost: 5000 },
+            { id: 202, name: "ガル", rank: "1", source: "太陽 カーシー(初期)", cost: 5000 },
+            { id: 203, name: "ブフ", rank: "1", source: "隠者 フォルネウス(初期)", cost: 5000 },
+            { id: 204, name: "ジオ", rank: "1", source: "愚者 イザナギ(初期)", cost: 5000 },
+            { id: 205, name: "マハラギ", rank: "2", source: "刑死者 べリス(Lv16)", cost: 10000 },
+            { id: 206, name: "マハガル", rank: "2", source: "法王 アンズー(Lv17)", cost: 10000 },
+            { id: 207, name: "マハブフ", rank: "2", source: "魔術師 ジャックフロスト(初期)", cost: 10000 },
+            { id: 208, name: "マハジオ", rank: "2", source: "節制 カイチ(初期)", cost: 10000 },
+            { id: 209, name: "ハマ", rank: "2", source: "正義 プリンシパリティ(初期)", cost: 10000 },
+            { id: 210, name: "ムド", rank: "2", source: "悪魔 リリム(初期)", cost: 10000 },
+            { id: 211, name: "淀んだ吐息", rank: "2", source: "愚者 レギオン(Lv25)", cost: 10000 },
+            { id: 212, name: "アギラオ", rank: "3", source: "隠者 ラミア(初期)", cost: 15000 },
+            { id: 213, name: "ガルーラ", rank: "3", source: "剛毅 クシミタマ(初期)", cost: 15000 },
+            { id: 214, name: "ブフーラ", rank: "3", source: "女教皇 ガンガー(初期)", cost: 15000 },
+            { id: 215, name: "ジオンガ", rank: "3", source: "法王 ユニコーン(初期)", cost: 15000 },
+            { id: 216, name: "マハンマ", rank: "3", source: "正義 ヴァーチャー(初期)", cost: 15000 },
+            { id: 217, name: "マハムド", rank: "3", source: "隠者 イッポンダタラ(Lv19)", cost: 15000 },
+            { id: 218, name: "テンタラフー", rank: "3", source: "恋愛 リャナンシ―(Lv43)", cost: 15000 },
+            { id: 219, name: "デビルスマイル", rank: "3", source: "悪魔 インキュバス(初期)", cost: 15000 },
+            { id: 220, name: "バリアントダンス", rank: "3", source: "隠者 モスマン(初期)", cost: 15000 },
+            { id: 221, name: "ポイズンミスト", rank: "3", source: "法王 オモイカネ(Lv8)", cost: 15000 },
+            { id: 222, name: "アニマフリーズ", rank: "3", source: "永劫 ナルキッソス(Lv27)", cost: 15000 },
+            { id: 223, name: "オールド・ワン", rank: "3", source: "月 アルラウネ(初期)", cost: 15000 },
+            { id: 224, name: "愚者のささやき", rank: "3", source: "魔術師 マダ(初期)", cost: 15000 },
+            { id: 225, name: "メギド", rank: "4", source: "皇帝 トート(初期)", cost: 25000 },
+            { id: 226, name: "淀んだ空気", rank: "4", source: "月 バアル・ゼブル(Lv82)", cost: 25000 },
+            { id: 227, name: "吸血", rank: "4", source: "星 キウン(Lv28)", cost: 30000 },
+            { id: 228, name: "吸魔", rank: "4", source: "悪魔 サキュバス(Lv48)", cost: 30000 },
+            { id: 229, name: "マハラギオン", rank: "5", source: "魔術師 ジャックランタン(Lv36)", cost: 40000 },
+            { id: 230, name: "マハガルーラ", rank: "5", source: "運命 クロト(初期)", cost: 40000 },
+            { id: 231, name: "マハブフーラ", rank: "5", source: "節制 ゲンブ(初期)", cost: 40000 },
+            { id: 232, name: "マハジオンガ", rank: "5", source: "正義 ドミニオン(Lv42)", cost: 40000 },
+            { id: 233, name: "アギダイン", rank: "6", source: "塔 マーラ(初期)", cost: 50000 },
+            { id: 234, name: "ガルダイン", rank: "6", source: "星 ガルーダ(初期)", cost: 50000 },
+            { id: 235, name: "ブフダイン", rank: "6", source: "女教皇 ハリティー(初期)", cost: 50000 },
+            { id: 236, name: "ジオダイン", rank: "6", source: "太陽 タムリン(初期)", cost: 50000 },
+            { id: 237, name: "ハマオン", rank: "6", source: "正義 ソロネ(初期)", cost: 50000 },
+            { id: 238, name: "ムドオン", rank: "6", source: "道化師 ロア(初期)", cost: 50000 },
+            { id: 239, name: "亡者の嘆き", rank: "6", source: "隠者 ニーズホッグ(Lv57)", cost: 50000 },
+            { id: 240, name: "マハラギダイン", rank: "7", source: "魔術師 スルト(Lv71)", cost: 60000 },
+            { id: 241, name: "マハガルダイン", rank: "7", source: "太陽 ジャターユ(Lv66)", cost: 60000 },
+            { id: 242, name: "マハブフダイン", rank: "7", source: "節制 ビャッコ(Lv68)", cost: 60000 },
+            { id: 243, name: "マハジオダイン", rank: "7", source: "星 カルティケーヤ(初期)", cost: 60000 },
+            { id: 244, name: "マハンマオン", rank: "7", source: "審判 アヌビス(Lv64)", cost: 60000 },
+            { id: 245, name: "マハムドオン", rank: "7", source: "隠者 ネビロス(初期)", cost: 60000 },
+            { id: 246, name: "メギドラ", rank: "8", source: "愚者 デカラビア(Lv50)", cost: 70000 },
+            { id: 247, name: "メギドラオン", rank: "10", source: "審判 メタトロン(Lv86)", cost: 120000 },
+
+            // --- 回復・補助 ---
+            { id: 301, name: "タルンダ", rank: "1", source: "戦車 スライム(Lv3)", cost: 5000 },
+            { id: 302, name: "スクンダ", rank: "1", source: "愚者 ヨモツシコメ(Lv9)", cost: 5000 },
+            { id: 303, name: "ラクンダ", rank: "1", source: "戦車 ナタタイシ(初期)", cost: 5000 },
+            { id: 304, name: "タルカジャ", rank: "1", source: "愚者 オバリヨン(初期)", cost: 5000 },
+            { id: 305, name: "スクカジャ", rank: "1", source: "死神 グール(Lv10)", cost: 5000 },
+            { id: 306, name: "ラクカジャ", rank: "1", source: "法王 シーサー(Lv22)", cost: 5000 },
+            { id: 307, name: "パトラ", rank: "1", source: "なし", cost: 5000 },
+            { id: 308, name: "クロズディ", rank: "1", source: "なし", cost: 5000 },
+            { id: 309, name: "トラエスト", rank: "2", source: "なし", cost: 6000 },
+            { id: 310, name: "ディア", rank: "1", source: "魔術師 ピクシー(初期)", cost: 7000 },
+            { id: 311, name: "トラフーリ", rank: "4", source: "なし", cost: 8000 },
+            { id: 312, name: "リべリオン", rank: "2", source: "なし", cost: 10000 },
+            { id: 313, name: "リパトラ", rank: "2", source: "なし", cost: 10000 },
+            { id: 314, name: "ポズムディ", rank: "2", source: "なし", cost: 10000 },
+            { id: 315, name: "シシリディ", rank: "2", source: "なし", cost: 10000 },
+            { id: 316, name: "火炎ガードキル", rank: "3", source: "太陽 ドゥン(初期)", cost: 15000 },
+            { id: 317, name: "氷結ガードキル", rank: "3", source: "永劫 ラクシュミ(Lv66)", cost: 15000 },
+            { id: 318, name: "疾風ガードキル", rank: "3", source: "月 セト(Lv71)", cost: 15000 },
+            { id: 319, name: "電撃ガードキル", rank: "3", source: "法王 ハチマン(Lv72)", cost: 15000 },
+            { id: 320, name: "メパトラ", rank: "3", source: "節制 アプサラス(Lv6)", cost: 15000 },
+            { id: 321, name: "メディア", rank: "3", source: "女教皇 サラスヴァティ(初期)", cost: 20000 },
+            { id: 322, name: "リカーム", rank: "3", source: "恋愛 クイーンメイブ(Lv26)", cost: 20000 },
+            { id: 323, name: "赤の壁", rank: "4", source: "月 ヤマタノオロチ(初期)", cost: 20000 },
+            { id: 324, name: "白の壁", rank: "4", source: "塔 クー・フーリン(Lv49)", cost: 20000 },
+            { id: 325, name: "蒼の壁", rank: "4", source: "	戦車 トリグラフ(Lv48)", cost: 20000 },
+            { id: 326, name: "緑の壁", rank: "4", source: "運命 アナンタ(Lv62)", cost: 20000 },
+            { id: 327, name: "マハタルンダ", rank: "4", source: "節制 セイリュウ(初期)", cost: 25000 },
+            { id: 328, name: "マハスクンダ", rank: "4", source: "隠者 クラマテング(初期)", cost: 25000 },
+            { id: 329, name: "マハラクンダ", rank: "4", source: "悪魔 ベルフェゴール(Lv63)", cost: 25000 },
+            { id: 330, name: "デクンダ", rank: "4", source: "女帝 センリ(Lv10)", cost: 25000 },
+            { id: 331, name: "デカジャ", rank: "4", source: "死神 モコイ(Lv初期)", cost: 25000 },
+            { id: 332, name: "レボリューション", rank: "4", source: "剛毅 カーリー(Lv53)", cost: 25000 },
+            { id: 333, name: "マハタルカジャ", rank: "4", source: "永劫 クシナダヒメ(初期)", cost: 35000 },
+            { id: 334, name: "マハスクカジャ", rank: "4", source: "永劫 ケツアルカトル(初期)", cost: 35000 },
+            { id: 335, name: "マハラクカジャ", rank: "4", source: "女教皇 パールヴァティ(Lv40)", cost: 35000 },
+            { id: 336, name: "ディアラマ", rank: "4", source: "節制 ニギミタマ(初期)", cost: 40000 },
+            { id: 337, name: "アムリタ", rank: "5", source: "女教皇 スカアハ(Lv81)", cost: 40000 },
+            { id: 338, name: "エナジーシャワー", rank: "6", source: "永劫 サティ(初期)", cost: 50000 },
+            { id: 339, name: "サマリカーム", rank: "7", source: "法王 コウリュウ(Lv初期)", cost: 60000 },
+            { id: 340, name: "テトラジャ", rank: "7", source: "月 ギリメカラ(Lv52)", cost: 60000 },
+            { id: 341, name: "ディアラハン", rank: "6", source: "女教皇 キクリヒメ(Lv52)", cost: 70000 },
+            { id: 342, name: "メディラマ", rank: "6", source: "恋愛 ウンディーネ(Lv36)", cost: 70000 },
+            { id: 343, name: "テトラブレイク", rank: "8", source: "月 スイキ(Lv60)", cost: 70000 },
+            { id: 344, name: "マカラブレイク", rank: "8", source: "運命 ラケシス(Lv54)", cost: 70000 },
+            { id: 345, name: "テトラカーン", rank: "9", source: "隠者 アラハバキ(Lv76)", cost: 80000 },
+            { id: 346, name: "マカラカーン", rank: "9", source: "悪魔 リリス(初期)", cost: 80000 },
+            { id: 347, name: "チャージ", rank: "8", source: "塔 ヨシツネ(初期)", cost: 90000 },
+            { id: 348, name: "コンセントレイト", rank: "8", source: "死神 アリス(Lv77)", cost: 90000 },
+            { id: 349, name: "メディアラハン", rank: "9", source: "恋愛 イシュタル(初期)", cost: 100000 },
+            { id: 350, name: "メシアライザー", rank: "10", source: "星 ルシフェル(Lv88)", cost: 120000 },
+            { id: 351, name: "ランダマイザ", rank: "0", source: "審判 トランペッター(Lv73)", cost: 200000 },
+            { id: 352, name: "ヒートライザ", rank: "0", source: "道化師 マガツイザナギ(Lv84)", cost: 200000 },
+
+            // --- 自動効果 ---
+            { id: 401, name: "コーチング", rank: "1", source: "愚者 ロキ(初期)", cost: 5000 },
+            { id: 402, name: "火炎見切り", rank: "2", source: "女教皇 ハイピクシー(Lv28)", cost: 10000 },
+            { id: 403, name: "氷結見切り", rank: "2", source: "魔術師 ディース(Lv41)", cost: 10000 },
+            { id: 404, name: "疾風見切り", rank: "2", source: "月 アンドラス(Lv25)", cost: 10000 },
+            { id: 405, name: "電撃見切り", rank: "2", source: "戦車 アラミタマ(Lv23)", cost: 10000 },
+            { id: 406, name: "警戒", rank: "2", source: "女教皇 サキミタマ(Lv13)", cost: 10000 },
+            { id: 407, name: "毒耐性", rank: "2", source: "なし", cost: 10000 },
+            { id: 408, name: "物理見切り", rank: "3", source: "道化師 バフォメット(Lv50)", cost: 15000 },
+            { id: 409, name: "カウンタ", rank: "3", source: "剛毅 ラクシャーサ(初期)", cost: 15000 },
+            { id: 410, name: "ローグロウ", rank: "3", source: "太陽 ホウオウ(Lv23)", cost: 15000 },
+            { id: 411, name: "アドバイス", rank: "3", source: "皇帝 オオクニヌシ(Lv45)", cost: 15000 },
+            { id: 412, name: "火炎ブースタ", rank: "3", source: "魔術師 カハク(Lv30)", cost: 18000 },
+            { id: 413, name: "氷結ブースタ", rank: "3", source: "皇帝 キングフロスト(Lv26)", cost: 18000 },
+            { id: 414, name: "電撃ブースタ", rank: "3", source: "皇帝 オベロン(Lv15)", cost: 18000 },
+            { id: 415, name: "疾風ブースタ", rank: "3", source: "運命 フォルトゥナ(Lv41)", cost: 18000 },
+            { id: 416, name: "小治癒促進", rank: "3", source: "節制 シルフ(Lv12)", cost: 20000 },
+            { id: 417, name: "小気功", rank: "3", source: "永劫 アメノウズメ(Lv20)", cost: 20000 },
+            { id: 418, name: "毒防御", rank: "4", source: "なし", cost: 25000 },
+            { id: 419, name: "気絶防御", rank: "4", source: "恋愛 ラファエル(Lv57)", cost: 25000 },
+            { id: 420, name: "真・火炎見切り", rank: "4", source: "運命 アトロポス(Lv69)", cost: 35000 },
+            { id: 421, name: "真・氷結見切り", rank: "4", source: "死神 ホワイトライダー(Lv62)", cost: 35000 },
+            { id: 422, name: "真・疾風見切り", rank: "4", source: "刑死者 ヴァスキ(Lv75)", cost: 35000 },
+            { id: 423, name: "真・電撃見切り", rank: "4", source: "道化師 セイテンタイセイ(初期)", cost: 35000 },
+            { id: 424, name: "ヘビーカウンタ", rank: "5", source: "星 フウキ(初期)", cost: 40000 },
+            { id: 425, name: "ミドルグロウ", rank: "5", source: "愚者 シキオウジ(Lv59)", cost: 40000 },
+            { id: 426, name: "光からの生還", rank: "5", source: "死神 サマエル(Lv41)", cost: 40000 },
+            { id: 427, name: "闇からの生還", rank: "5", source: "女帝 ガブリエル(Lv47)", cost: 40000 },
+            { id: 428, name: "火炎耐性", rank: "5", source: "女帝 マザーハーロット(Lv64)", cost: 50000 },
+            { id: 429, name: "氷結耐性", rank: "5", source: "節制 スザク(Lv58)", cost: 50000 },
+            { id: 430, name: "電撃耐性", rank: "5", source: "道化師 クヴァンダ(Lv59)", cost: 50000 },
+            { id: 431, name: "疾風耐性", rank: "5", source: "道化師 チェルノボグ(Lv66)", cost: 50000 },
+            { id: 432, name: "真・物理見切り", rank: "5", source: "女帝 アリラト(Lv73)", cost: 50000 },
+            { id: 433, name: "ハイパーカウンタ", rank: "6", source: "正義 ウリエル(Lv60)", cost: 50000 },
+            { id: 434, name: "神々の加護", rank: "6", source: "星 ネコショウグン(Lv37)", cost: 50000 },
+            { id: 435, name: "ハマ成功率UP", rank: "6", source: "正義 エンジェル(Lv9)", cost: 50000 },
+            { id: 436, name: "ムド成功率UP", rank: "6", source: "死神 モト(Lv50)", cost: 50000 },
+            { id: 437, name: "光からの大生還", rank: "6", source: "悪魔 ベリアル(Lv71)", cost: 50000 },
+            { id: 438, name: "闇からの大生還", rank: "6", source: "法王 だいそうじょう(Lv63)", cost: 50000 },
+            { id: 439, name: "中治癒促進", rank: "6", source: "女帝 ティターニア(Lv31)", cost: 60000 },
+            { id: 440, name: "中気功", rank: "6", source: "皇帝 バロン(Lv69)", cost: 60000 },
+            { id: 441, name: "攻撃の心得", rank: "7", source: "道化師 グルル(初期)", cost: 60000 },
+            { id: 442, name: "防御の心得", rank: "7", source: "道化師 タケミナカタ(Lv30)", cost: 60000 },
+            { id: 443, name: "素早さの心得", rank: "7", source: "刑死者 マカミ(初期)", cost: 60000 },
+            { id: 444, name: "仁王立ち", rank: "7", source: "隠者 オンギョウキ(Lv87)", cost: 60000 },
+            { id: 445, name: "バステ成功率UP", rank: "7", source: "月 ノズチ(初期)", cost: 60000 },
+            { id: 446, name: "物理耐性", rank: "6", source: "魔術師 ジン(Lv65)", cost: 70000 },
+            { id: 447, name: "大天使の加護", rank: "8", source: "	正義 スラオシャ(Lv81)", cost: 70000 },
+            { id: 448, name: "ハイグロウ", rank: "8", source: "星 サトゥルヌス(Lv79)", cost: 70000 },
+            { id: 449, name: "食いしばり", rank: "7", source: "星 ガネーシャ(Lv55)", cost: 70000 },
+            { id: 450, name: "勝利の息吹", rank: "6", source: "太陽 ヤタガラス(Lv46)", cost: 70000 },
+            { id: 451, name: "急速回復", rank: "4", source: "永劫 カグヤ(初期)", cost: 70000 },
+            { id: 452, name: "光反射", rank: "8", source: "節制 ユルング(Lv75)", cost: 80000 },
+            { id: 453, name: "闇反射", rank: "8", source: "審判 ミカエル(Lv76)", cost: 80000 },
+            { id: 454, name: "火炎ハイブースタ", rank: "7", source: "愚者 ジャアクフロスト(Lv42)", cost: 80000 },
+            { id: 455, name: "氷結ハイブースタ", rank: "7", source: "女帝 スカディ(Lv56)", cost: 80000 },
+            { id: 456, name: "電撃ハイブースタ", rank: "7", source: "太陽 スパルナ(Lv83)", cost: 80000 },
+            { id: 457, name: "疾風ハイブースタ", rank: "7", source: "皇帝 オーディン(Lv76)", cost: 80000 },
+            { id: 458, name: "マハラクカオート", rank: "9", source: "皇帝 セタンタ(Lv39)", cost: 80000 },
+            { id: 459, name: "マハタルカオート", rank: "9", source: "太陽 ナラシンハ(Lv53)", cost: 80000 },
+            { id: 460, name: "マハスクカオート", rank: "9", source: "永劫 キングー(初期)", cost: 80000 },
+            { id: 461, name: "大治癒促進", rank: "8", source: "節制 ヴィシュヌ(Lv75)", cost: 90000 },
+            { id: 462, name: "大気功", rank: "8", source: "審判 サタン(Lv78)", cost: 90000 },
+            { id: 463, name: "不屈の闘志", rank: "8", source: "刑死者 アティス(Lv84)", cost: 90000 },
+            { id: 464, name: "魔術の素養", rank: "9", source: "塔 シヴァ(Lv83)", cost: 120000 },
+            { id: 465, name: "武道の心得", rank: "9", source: "戦車 フツヌシ(Lv85)", cost: 120000 },
+            { id: 466, name: "瞬間回復", rank: "0", source: "運命 ノルン(Lv77)", cost: 180000 },
+            { id: 467, name: "物理吸収", rank: "10", source: "なし", cost: 300000 },
+            { id: 468, name: "火炎吸収", rank: "10", source: "刑死者 ヘルズエンジェル(Lv71)", cost: 300000 },
+            { id: 469, name: "氷結吸収", rank: "10", source: "女帝 イシス(Lv82)", cost: 300000 },
+            { id: 470, name: "電撃吸収", rank: "10", source: "審判 ルシファー(Lv98)", cost: 300000 },
+            { id: 471, name: "疾風吸収", rank: "10", source: "太陽 ホルス(Lv73)", cost: 300000 },
+            { id: 472, name: "不動心", rank: "0", source: "太陽 アスラおう(Lv92)", cost: 300000 },
+            { id: 473, name: "勝利の雄たけび", rank: "0", source: "世界 伊邪那岐大神(初期)", cost: 500000 }
+        ];
+
+        const STORAGE_KEY = 'p4g_skill_tracker';
+        const FAV_STORAGE_KEY = 'p4g_skill_tracker_favorites';
+        let userState = {};
+        let userFavorites = [];
+
+        window.onload = () => {
+            loadState();
+            setupRankFilters();
+            setupFilterListeners();
+            updateAllToggleButtons(); // 起動時にトグルボタンの状態をセット
+            renderCards();
+            updateStats();
+
+            document.getElementById('search-input').addEventListener('input', renderCards);
+        };
+
+        // ランクフィルターの動的生成 (初期状態は未選択)
+        function setupRankFilters() {
+            const container = document.getElementById('filter-rank');
+            container.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                container.innerHTML += `<div class="filter-chk-btn" data-val="${i}">ランク${i}</div>`;
+            }
+            container.innerHTML += `<div class="filter-chk-btn" data-val="0">入手不可</div>`;
+        }
+
+        // フィルターボタンのイベントリスナー設定
+        function setupFilterListeners() {
+            // 各チェックボタンのクリックイベント
+            document.querySelectorAll('.filter-chk-btn:not(.fav-filter)').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.target.classList.toggle('active');
+                    const parentGroup = e.target.closest('.checkbox-group').id;
+                    updateToggleBtnState(parentGroup);
+                    renderCards();
+                });
+            });
+        }
+
+        // グループ全体のトグルボタン処理 (全選択 / クリア)
+        function toggleFilterGroup(groupId) {
+            const container = document.getElementById(groupId);
+            const btns = container.querySelectorAll('.filter-chk-btn');
+            const activeBtns = container.querySelectorAll('.filter-chk-btn.active');
+
+            if (activeBtns.length === btns.length) {
+                // すべて選択されている場合はクリア
+                btns.forEach(b => b.classList.remove('active'));
+            } else {
+                // それ以外はすべて選択
+                btns.forEach(b => b.classList.add('active'));
+            }
+
+            updateToggleBtnState(groupId);
+            renderCards();
+        }
+
+        // トグルボタンの表示状態(全選択/クリア)を更新
+        function updateToggleBtnState(groupId) {
+            const container = document.getElementById(groupId);
+            const btns = container.querySelectorAll('.filter-chk-btn');
+            const activeBtns = container.querySelectorAll('.filter-chk-btn.active');
+            const toggleBtn = document.querySelector(`.toggle-all-btn[data-target="${groupId}"]`);
+
+            if (toggleBtn) {
+                if (btns.length > 0 && activeBtns.length === btns.length) {
+                    toggleBtn.textContent = 'クリア';
+                    toggleBtn.classList.add('is-clear');
+                } else {
+                    toggleBtn.textContent = '全選択';
+                    toggleBtn.classList.remove('is-clear');
+                }
+            }
+        }
+
+        // 起動時に全グループのトグルボタン状態を更新
+        function updateAllToggleButtons() {
+            updateToggleBtnState('filter-status');
+            updateToggleBtnState('filter-category');
+            updateToggleBtnState('filter-rank');
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) userState = JSON.parse(saved);
+
+            const favs = localStorage.getItem(FAV_STORAGE_KEY);
+            if (favs) userFavorites = JSON.parse(favs);
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
+            updateStats();
+        }
+
+        function saveFavorites() {
+            localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(userFavorites));
+        }
+
+        function resetData() {
+            if (confirm("データを全てリセットしますか？この操作は取り消せません。")) {
+                userState = {};
+                userFavorites = [];
+                saveState();
+                saveFavorites();
+                renderCards();
+            }
+        }
+
+        function setStatus(id, status) {
+            if (status === 'none') {
+                delete userState[id];
+            } else {
+                userState[id] = status;
+            }
+            saveState();
+
+            const card = document.getElementById(`card-${id}`);
+            if (card) {
+                card.classList.remove('status-none', 'status-extractable', 'status-owned');
+                card.classList.add(`status-${status}`);
+            }
+        }
+
+        function toggleFavorite(id) {
+            const index = userFavorites.indexOf(id);
+            if (index === -1) {
+                userFavorites.push(id);
+            } else {
+                userFavorites.splice(index, 1);
+            }
+            saveFavorites();
+
+            const star = document.querySelector(`#card-${id} .fav-star`);
+            if (star) {
+                star.classList.toggle('active');
+                star.textContent = userFavorites.includes(id) ? '★' : '☆';
+            }
+
+            const favFilterActive = document.getElementById('fav-filter-btn').classList.contains('active');
+            if (favFilterActive) renderCards();
+        }
+
+        function toggleFavFilter() {
+            const btn = document.getElementById('fav-filter-btn');
+            btn.classList.toggle('active');
+            renderCards();
+        }
+
+        function getCategory(id) {
+            if (id >= 100 && id < 200) return "物理";
+            if (id >= 200 && id < 300) return "魔法";
+            if (id >= 300 && id < 400) return "回復・補助";
+            if (id >= 400 && id < 500) return "自動効果";
+            return "その他";
+        }
+
+        function hiraToKata(str) {
+            return str.replace(/[\u3041-\u3096]/g, function (match) {
+                var chr = match.charCodeAt(0) + 0x60;
+                return String.fromCharCode(chr);
+            });
+        }
+
+        function revealAllSpoilers(id) {
+            if (!confirm("ネタバレ注意！重大なネタバレを含みます。表示しますか？")) return;
+            const skill = skillData.find(s => s.id === id);
+            if (!skill) return;
+
+            const updateElement = (elementId, text) => {
+                const el = document.getElementById(elementId);
+                if (el) {
+                    el.textContent = text;
+                    el.classList.remove('spoiler-mask');
+                    el.classList.add('spoiler-revealed');
+                    el.onclick = null;
+                }
+            };
+
+            updateElement(`name-${id}`, skill.name);
+            updateElement(`source-${id}`, skill.source);
+        }
+
+        // 選択されているフィルターの値を取得するヘルパー関数
+        function getActiveFilters(containerId) {
+            const activeBtns = document.querySelectorAll(`#${containerId} .filter-chk-btn.active`);
+            return Array.from(activeBtns).map(btn => btn.dataset.val);
+        }
+
+        function renderCards() {
+            const container = document.getElementById('card-list');
+            const searchInput = document.getElementById('search-input').value.trim();
+
+            // 各フィルターの選択状態を取得
+            const activeStatuses = getActiveFilters('filter-status');
+            const activeCategories = getActiveFilters('filter-category');
+            const activeRanks = getActiveFilters('filter-rank');
+            const favFilterActive = document.getElementById('fav-filter-btn').classList.contains('active');
+
+            const searchTerms = searchInput.toLowerCase().split(/\s+/).map(term => ({
+                original: term,
+                kata: hiraToKata(term)
+            }));
+
+            container.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+
+            skillData.forEach(skill => {
+                // 1. 状態フィルタ (空配列なら全件表示、それ以外はOR条件)
+                const status = userState[skill.id] || 'none';
+                if (activeStatuses.length > 0 && !activeStatuses.includes(status)) return;
+
+                // 2. カテゴリフィルタ (空配列なら全件表示、それ以外はOR条件)
+                const category = getCategory(skill.id);
+                if (activeCategories.length > 0 && !activeCategories.includes(category)) return;
+
+                // 3. ランクフィルタ (空配列なら全件表示、それ以外はOR条件)
+                if (activeRanks.length > 0 && !activeRanks.includes(skill.rank.toString())) return;
+
+                // 4. お気に入りフィルタ
+                const isFav = userFavorites.includes(skill.id);
+                if (favFilterActive && !isFav) return;
+
+                // 5. テキスト検索 (AND条件, ひらがな対応)
+                if (searchInput) {
+                    const targetText = `${skill.name} ${skill.source}`.toLowerCase();
+                    const targetTextKata = hiraToKata(targetText);
+
+                    const isMatch = searchTerms.every(term => {
+                        return targetText.includes(term.original) || targetTextKata.includes(term.kata);
+                    });
+
+                    if (!isMatch) return;
+                }
+
+                // カード生成
+                const cardEl = document.createElement('div');
+                cardEl.id = `card-${skill.id}`;
+                cardEl.className = `skill-card status-${status}`;
+
+                const isSpoiler = (skill.id === 473);
+                const nameDisplay = isSpoiler
+                    ? `<span id="name-${skill.id}" class="spoiler-mask" onclick="revealAllSpoilers(${skill.id})">???</span>`
+                    : skill.name;
+                const sourceDisplay = isSpoiler
+                    ? `<span id="source-${skill.id}" class="spoiler-mask" onclick="revealAllSpoilers(${skill.id})">???</span>`
+                    : skill.source;
+
+                const isUnavailable = (skill.rank === "0" || skill.rank === 0);
+                const rankText = isUnavailable ? "入手不可" : `ランク${skill.rank}`;
+                const sourceClass = (skill.source === "なし" || skill.source === "???") ? "source-text no-source" : "source-text";
+                const costFormatted = skill.cost.toLocaleString() + " 円";
+
+                cardEl.innerHTML = `
+                <div class="skill-header">
+                    <span class="skill-name">${nameDisplay}</span>
+                    <span class="category-badge">${category}</span>
+                    <span class="fav-star ${isFav ? 'active' : ''}" onclick="toggleFavorite(${skill.id})">${isFav ? '★' : '☆'}</span>
+                </div>
+                <div class="skill-body">
+                    <div class="info-row">
+                        <span class="info-label">値段</span>
+                        <span class="info-val">${costFormatted}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">シャッフルタイム</span>
+                        <span class="info-val" style="color:${isUnavailable ? '#999' : '#000'}">${rankText}</span>
+                    </div>
+                    <div class="source-section">
+                        <span class="source-label">抽出ペルソナ:</span>
+                        <span class="${sourceClass}">${sourceDisplay}</span>
+                    </div>
+                </div>
+                <div class="status-controls">
+                    <button class="status-btn" data-status="none" onclick="setStatus(${skill.id}, 'none')">未所持</button>
+                    <button class="status-btn" data-status="extractable" onclick="setStatus(${skill.id}, 'extractable')">抽出可</button>
+                    <button class="status-btn" data-status="owned" onclick="setStatus(${skill.id}, 'owned')">所持</button>
+                </div>
+            `;
+                fragment.appendChild(cardEl);
+            });
+
+            container.appendChild(fragment);
+
+            if (container.children.length === 0) {
+                container.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:20px; color:#666;">該当するスキルカードが見つかりません</div>';
+            }
+        }
+
+        function updateStats() {
+            const total = skillData.length;
+            let owned = 0;
+            let extractable = 0;
+
+            const validIds = new Set(skillData.map(s => s.id));
+
+            Object.entries(userState).forEach(([id, status]) => {
+                if (validIds.has(parseInt(id))) {
+                    if (status === 'owned') owned++;
+                    if (status === 'extractable') extractable++;
+                }
+            });
+
+            const missing = total - owned - extractable;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-owned').textContent = owned;
+            document.getElementById('stat-extractable').textContent = extractable;
+            document.getElementById('stat-missing').textContent = missing;
+
+            const percent = total === 0 ? 0 : Math.round((owned / total) * 100);
+            document.getElementById('stat-percent').textContent = `${percent}%`;
+        }
+    </script>
+</body>
+
+</html>
