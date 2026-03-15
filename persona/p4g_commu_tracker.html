@@ -101,7 +101,7 @@
             box-shadow: 15px 15px 0px rgba(0, 0, 0, 0.8);
             padding: 25px;
             min-height: 80vh;
-            
+
             /* Grid設定 */
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
@@ -109,11 +109,8 @@
             align-content: start;
         }
 
-        /* ★新設: コンテナ内の先頭に置く注意書きエリア */
         .intro-note {
-            /* これが重要：グリッドの1列目から最後の列までを占有する */
             grid-column: 1 / -1;
-            
             background-color: #f9f9f9;
             border: 2px dashed #ccc;
             padding: 15px;
@@ -154,6 +151,25 @@
             flex-direction: column;
         }
 
+        .commu-card.rank-zero {
+            background-color: #f4f4f4;
+            border-color: #aaa;
+        }
+
+        .commu-card.rank-zero .chara-name {
+            color: #888;
+            border-bottom-color: #ccc;
+        }
+
+        .commu-card.rank-zero .arcana-name,
+        .commu-card.rank-zero .schedule-location {
+            color: #aaa;
+        }
+
+        .commu-card.rank-zero .rank-display {
+            color: #aaa;
+        }
+
         .commu-card.max-rank {
             border-color: var(--p4-orange);
             background-color: #fff8f0;
@@ -169,9 +185,17 @@
         }
 
         @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(255, 102, 0, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 102, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 102, 0, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 102, 0, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 102, 0, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 102, 0, 0);
+            }
         }
 
         .arcana-name {
@@ -180,6 +204,7 @@
             text-transform: uppercase;
             font-weight: bold;
             letter-spacing: 1px;
+            transition: color 0.2s;
         }
 
         .chara-name {
@@ -189,15 +214,16 @@
             border-bottom: 2px solid var(--p4-yellow);
             display: inline-block;
             padding-bottom: 2px;
+            transition: color 0.2s, border-color 0.2s;
         }
 
-        /* ★修正: 3.0emに変更 */
         .schedule-location {
             font-size: 0.8em;
             color: #666;
             margin-bottom: 15px;
-            min-height: 3.0em; 
+            min-height: 3.0em;
             line-height: 1.3;
+            transition: color 0.2s;
         }
 
         /* ランク操作エリア */
@@ -208,7 +234,7 @@
             background: #f0f0f0;
             padding: 10px;
             border-radius: 4px;
-            margin-top: auto; 
+            margin-top: auto;
             margin-bottom: 5px;
         }
 
@@ -220,6 +246,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: color 0.2s;
         }
 
         .rank-display.is-max {
@@ -307,6 +334,16 @@
         .status-select-btn.active-2 {
             background: var(--p4-purple);
             color: white;
+        }
+
+        /* カウンター用リセットボタンの特殊スタイル */
+        .status-select-btn.reset-counter-btn {
+            background: #fff;
+            color: var(--p4-black);
+        }
+
+        .status-select-btn.reset-counter-btn:hover {
+            background: var(--p4-gray);
         }
 
         .status-icon {
@@ -404,19 +441,23 @@
             { id: 14, arcana: "XIII. 死神", name: "老婦人", schedule: "日または祝日 / 昼", location: "河原" },
             { id: 15, arcana: "XIV. 節制", name: "学童保育の若い母親", schedule: "月・金・土 / 昼", location: "バス停" },
             { id: 16, arcana: "XV. 悪魔", name: "ナース", schedule: "水・木・金 / 夜", location: "稲羽市立病院" },
-            { id: 17, arcana: "XVI. 塔", name: "家庭教師先の生徒", schedule: "火・木・土 / 夜", location:"家庭教師先" },
-            { id: 18, arcana:"XVII. 星", name:"クマ", schedule:"イベント進行", location: null },
+            { id: 17, arcana: "XVI. 塔", name: "家庭教師先の生徒", schedule: "火・木・土 / 夜", location: "家庭教師先" },
+            { id: 18, arcana: "XVII. 星", name: "クマ", schedule: "イベント進行", location: null },
             { id: 19, arcana: "XVIII. 月", name: "海老原 あい", schedule: "水・木・金 / 昼", location: "教室棟 1F廊下" },
             { id: 20, arcana: "XIX. 太陽", name: "小沢 or 松永", schedule: "月・火・木 / 昼", location: "教室棟 2F廊下" },
             { id: 21, arcana: "XX. 審判", name: "真実を追う仲間たち", schedule: "イベント進行", location: null },
             { id: 22, arcana: "道化師", name: "足立 透", schedule: "不定期 / 昼・夜", location: "ジュネス / 商店街南側" },
-            { id: 23, arcana: "XX. 永劫", name: "マリー", schedule: "水・土・日 / 昼", location:"商店街南側" }
+            { id: 23, arcana: "XX. 永劫", name: "マリー", schedule: "水・土・日 / 昼", location: "商店街南側" }
         ];
 
         let commuData = [];
+        let extraCounter = 0; // カウンター用の変数
+
         const STORAGE_KEY = 'p4_commu_data';
+        const COUNTER_STORAGE_KEY = 'p4_commu_data_counter';
 
         function init() {
+            // コミュデータの読み込み
             const savedJson = localStorage.getItem(STORAGE_KEY);
             let savedState = [];
 
@@ -437,9 +478,16 @@
                 };
             });
 
+            // カウンターデータの読み込み
+            const savedCounter = localStorage.getItem(COUNTER_STORAGE_KEY);
+            if (savedCounter !== null) {
+                extraCounter = parseInt(savedCounter, 10) || 0;
+            }
+
             render();
         }
 
+        // コミュデータの保存
         function saveData() {
             const dataToSave = commuData.map(item => ({
                 id: item.id,
@@ -449,12 +497,34 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
         }
 
+        // カウンターの保存と操作
+        function saveCounter() {
+            localStorage.setItem(COUNTER_STORAGE_KEY, extraCounter);
+        }
+
+        function changeCounter(delta) {
+            extraCounter += delta;
+            if (extraCounter < 0) extraCounter = 0;
+            if (extraCounter > 999) extraCounter = 999; // 表示崩れ防止のため上限を設定
+            saveCounter();
+            render();
+        }
+
+        function resetCounter() {
+            extraCounter = 0;
+            saveCounter();
+            render();
+        }
+
         function changeRank(index, delta) {
             const item = commuData[index];
             let newRank = item.rank + delta;
 
             if (newRank < 0) newRank = 0;
             if (newRank > 10) newRank = 10;
+
+            // 値が変わっていない場合は処理を抜ける（MAX時に+を押した時など）
+            if (item.rank === newRank) return;
 
             item.rank = newRank;
 
@@ -468,6 +538,15 @@
 
             saveData();
             render();
+
+            if (newRank === 10) {
+                const isAllMax = commuData.every(c => c.rank === 10);
+                if (isAllMax) {
+                    setTimeout(() => {
+                        alert("おめでとうございます！\nすべてのコミュニティがMAXになりました！");
+                    }, 100);
+                }
+            }
         }
 
         function setStatus(index, status) {
@@ -480,8 +559,9 @@
         }
 
         function resetAll() {
-            if (confirm("全てのデータを初期状態に戻しますか？")) {
+            if (confirm("全てのデータを初期状態に戻しますか？\n(カウンターも0になります)")) {
                 localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(COUNTER_STORAGE_KEY);
                 init();
             }
         }
@@ -490,8 +570,6 @@
             const container = document.getElementById('app');
             container.innerHTML = '';
 
-            // ★ここに注意書きを追加
-            // grid-column: 1 / -1 によって、このdivだけは横幅いっぱいになります
             const noteDiv = document.createElement('div');
             noteDiv.className = 'intro-note';
             noteDiv.innerHTML = `
@@ -500,15 +578,25 @@
                 <strong style="color:var(--p4-orange)">可能！:</strong> ランクアップ可能<br>
                 <strong style="color:var(--p4-purple)">未確認:</strong> ランクアップ可能か未確認の状態。次に会えるときに確認<br>
                 という風に使ってくれたらうれしいです<br>
-                ※天候やテスト週間、物語の進行状況などによって会えなかったり会える場所が違う時期があります。<br>　詳細は各攻略サイトを参照してください。
+                「← / →」キーで<strong>カウンター(おまけ)</strong>の操作ができます。<br>
+                ※天候やテスト週間、物語の進行状況などによって会えなかったり会える場所が違う時期があります。<br>
+                　詳細は各攻略サイトを参照してください。<br>
+                なお、このツールの作成に当たって生成AIを使用しています。
             `;
             container.appendChild(noteDiv);
 
+            // コミュカードの描画
             commuData.forEach((item, index) => {
                 const isMax = item.rank === 10;
+                const isZero = item.rank === 0;
 
                 let cardClass = 'commu-card';
-                if (isMax) cardClass += ' max-rank';
+                if (isMax) {
+                    cardClass += ' max-rank';
+                } else if (isZero) {
+                    cardClass += ' rank-zero';
+                }
+
                 if (!isMax && item.status === 1) cardClass += ' status-ready';
                 if (!isMax && item.status === 2) cardClass += ' status-unknown';
 
@@ -554,7 +642,53 @@
                 `;
                 container.appendChild(card);
             });
+
+            // 汎用カウンターカードの描画 (24枠目)
+            const counterCard = document.createElement('div');
+            counterCard.className = 'commu-card';
+
+            const counterStatusHtml = `
+                <div class="status-controls">
+                    <button class="status-select-btn reset-counter-btn" 
+                            onclick="resetCounter()">
+                        リセット
+                    </button>
+                </div>
+            `;
+
+            counterCard.innerHTML = `
+                <div class="commu-card-content">
+                    <div class="arcana-name">おまけ</div>
+                    <div class="chara-name">カウンター</div>
+                    <div class="schedule-location">
+                        <div>ただのカウンターです</div>
+                        <div>コミュには関係ありません</div>
+                    </div>
+                    <div class="rank-control">
+                        <button class="btn" onclick="changeCounter(-1)" ${extraCounter === 0 ? 'disabled' : ''}>-</button>
+                        <div class="rank-display">${extraCounter}</div>
+                        <button class="btn" onclick="changeCounter(1)" ${extraCounter >= 999 ? 'disabled' : ''}>+</button>
+                    </div>
+                    <div class="rank-up-note" style="visibility: hidden;">-</div>
+                </div>
+                ${counterStatusHtml}
+            `;
+            container.appendChild(counterCard);
         }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault(); // 画面遷移などのデフォルト動作を防ぐ
+                changeCounter(-1);
+            } else if (event.key === 'ArrowRight') {
+                event.preventDefault(); // 画面遷移などのデフォルト動作を防ぐ
+                changeCounter(1);
+            } else if (event.ctrlKey && event.key === 'ArrowDown') {
+                event.preventDefault();
+                resetCounter();
+            }
+
+        });
 
         init();
     </script>
