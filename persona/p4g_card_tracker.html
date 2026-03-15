@@ -18,7 +18,7 @@
             --p4-gray: #333;
             --p4-orange: #ff6600;
             --p4-green: #00aa00;
-            --p4-red: #cc0000;
+            --p4-pink: #ff9999;
             /* 背景パターン定義 */
             --p4-bg-pattern: repeating-linear-gradient(45deg,
                     #ffe600,
@@ -450,7 +450,7 @@
         }
 
         .skill-card.status-none .status-btn[data-status="none"] {
-            background: var(--p4-red);
+            background: var(--p4-pink);
             color: white;
         }
 
@@ -529,11 +529,12 @@
 
         <div class="intro-note">
             <h2>Guide</h2><br>
-            <strong>未所持:</strong> まだそのスキルカードを所持していない<br>
+            <strong  style="color:var(--p4-pink)">未所持:</strong> まだそのスキルカードを所持していない<br>
             <strong style="color:var(--p4-orange)">抽出可:</strong> 抽出可能ペルソナは所持している<br>
             <strong style="color:var(--p4-green)">所持:</strong> そのスキルカードを所持している<br>
             という風に使ってくれたらうれしいです<br>
-            ※アリ・ダンスはスキルカード化できないので早めに用意するといいかも
+            ※アリ・ダンスはスキルカード化できないので早めに用意するといいかも<br>
+            なお、このツールの作成に当たって生成AIを使用しています。
         </div>
         <div class="stats-bar">
             <div class="stat-item">
@@ -757,7 +758,7 @@
             { id: 336, name: "ディアラマ", rank: "4", source: "節制 ニギミタマ(初期)", cost: 40000 },
             { id: 337, name: "アムリタ", rank: "5", source: "女教皇 スカアハ(Lv81)", cost: 40000 },
             { id: 338, name: "エナジーシャワー", rank: "6", source: "永劫 サティ(初期)", cost: 50000 },
-            { id: 339, name: "サマリカーム", rank: "7", source: "法王 コウリュウ(Lv初期)", cost: 60000 },
+            { id: 339, name: "サマリカーム", rank: "6", source: "法王 コウリュウ(Lv初期)", cost: 60000 },
             { id: 340, name: "テトラジャ", rank: "7", source: "月 ギリメカラ(Lv52)", cost: 60000 },
             { id: 341, name: "ディアラハン", rank: "6", source: "女教皇 キクリヒメ(Lv52)", cost: 70000 },
             { id: 342, name: "メディラマ", rank: "6", source: "恋愛 ウンディーネ(Lv36)", cost: 70000 },
